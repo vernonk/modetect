@@ -21,6 +21,7 @@ _Runs the device detection updating the publicly accessible properties available
     })
     
 _Run device detection getting a return Object with device, deviceGroup, and deviceType (also updates publicly accessible properties on MODETECT NS)_
+
     (function() {
       var deviceInfo = MODETECT.detection.getCurrentDevice();
     })
