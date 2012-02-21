@@ -3,7 +3,7 @@
 // Covering userAgent, platform, resolution and device version tests
 // Author: Vernon Kesner
 // Email: vernonkesner@me.com
-// v0.1.0
+// v0.1.2
 
 //Methods for device detection inspired by Sencha Touch Ext.is
 //http://docs.sencha.com/touch/1-1/#!/api/Ext.is
