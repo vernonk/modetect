@@ -152,13 +152,6 @@ MODETECT.detection = {
       identifier: "mobile",
       deviceGroup: "otherMobile",
       deviceType: "phone"
-    },
-    {
-      property: "platform",
-      pattern: /MacIntel/g,
-      identifier: "android",
-      deviceGroup: "androidPhone",
-      deviceType: "phone"
     }
   ],
 
