@@ -20,10 +20,18 @@ MODETECT.detection = {
 
   //all detection based off of window.navigator.platform || window.navigator.userAgent || window.screen.width
   //each platform below has 4 properties
-  // @property - This should be which property we will use to do our test against platform, userAgent, resolution, androidVersion.
+  // @property - This should be which property we will use to do our test against platform, userAgent, resolution, osVersion.
   // @pattern || @maxWidth - Pattern used in regex to match OR integer of max width to match resolution
   // @identifier - Used as the return identifier set in the options.currentDevice property
-  // @deviceGroup - One of 5 values: ios, iosTablet, androidPhone, androidTablet, otherMobile
+  // @deviceGroup - One of 6 values: ios, iosTablet, androidPhone, androidTablet, otherMobile, unsupportedMobile
+  // @deviceType - Type of device
+  //
+  //There is also an optional "subtests" array that allows you to do further qualifying tests on the particular device.
+  //One of these subtests include detecting osVersion from within the userAgent string (useful with Android phone vs. tablet detection)
+  //This particular subtest has additional properties to those properties listed above.
+  //@version - Integer - major version number to do comparison against.
+  //@versionComparison - String - Type of comparison. "match", "greaterThan", "lessThan"
+  //@exitTest - Boolean - True value will cause the matched device to be returned straight away exiting any further subtests
   platforms: [
     {
       property: "platform",
@@ -167,9 +175,6 @@ MODETECT.detection = {
         platforms = self.platforms,
         totalPlatforms = platforms.length,
         currentPlatform,
-        screenWidth = window.screen.width, //updated on orientation change in Android but not iOS
-        screenHeight = window.screen.height, //updated on orientation change in Android but not iOS
-        //screenOrientation = (window.orientation) ? window.orientation : -1,  <- Removing for now as Android doesn't always update
         deviceMatch,
         i, j,
         subtestsLength,
@@ -179,7 +184,7 @@ MODETECT.detection = {
     for(i = 0; i < totalPlatforms; i++) {
       currentPlatform = platforms[i];
       if(currentPlatform.property === "resolution") {
-        if(self.testDeviceResolution(currentPlatform.maxPortraitWidth, screenWidth, screenHeight)) {
+        if(self.testDeviceResolution(currentPlatform.maxPortraitWidth)) {
           self.currentDevice = currentPlatform.identifier;
           self.currentDeviceGroup = currentPlatform.deviceGroup;
           self.currentDeviceType = currentPlatform.deviceType;
@@ -209,7 +214,7 @@ MODETECT.detection = {
             currentSubtest = currentPlatform["subtests"][j];
 
             if(currentSubtest.property === "resolution") {
-              if(self.testDeviceResolution(currentSubtest.maxPortraitWidth, screenWidth, screenHeight)) {
+              if(self.testDeviceResolution(currentSubtest.maxPortraitWidth)) {
                 self.currentDevice = currentSubtest.identifier;
                 self.currentDeviceGroup = currentSubtest.deviceGroup;
                 self.currentDeviceType = currentSubtest.deviceType;
@@ -255,14 +260,13 @@ MODETECT.detection = {
 
   },
 
-  //Test if maximum portrait width set in platform is less than the current screen width
+  //Test if maximum portrait width set in platform is less than the minimum screen width
   //return - Boolean
-  testDeviceResolution: function(maxPortraitWidth, screenWidth, screenHeight) {
-    //TODO: Update to use screen orientation when Android support for updating orientation property is better.
-    //Right now, I'm going to take the smaller value between screenWidth and screenHeight and consider that portrait width.
-    var portraitWidth = (screenWidth < screenHeight) ? screenWidth : screenHeight;
+  testDeviceResolution: function(maxPortraitWidth) {
+    //Get the minimum portrait width and deal with high density screens as well
+    var portraitWidth = Math.min(screen.width, screen.height) / ("devicePixelRatio" in window ? window.devicePixelRatio : 1);
 
-    if(portraitWidth < maxPortraitWidth) {
+    if(portraitWidth <= maxPortraitWidth) {
       return true;
     }
     else {
