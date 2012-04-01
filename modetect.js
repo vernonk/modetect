@@ -1,288 +1,115 @@
-// modetect.js
-// A different approach to device detection allowing numerous levels of tests.
-// Covering userAgent, platform, resolution and device version tests
-// Author: Vernon Kesner
-// Email: vernonkesner@me.com
-// v0.1.2
-
-//Methods for device detection inspired by Sencha Touch Ext.is
-//http://docs.sencha.com/touch/1-1/#!/api/Ext.is
-
+//Creating MODETECT ns for device detection and mobile redirects (to begin with)
+//These items live outside of the ALLY ns and have no dependecy on jQuery or other library
 var MODETECT = MODETECT || {};
 
-MODETECT.detection = {
+/**
+* Device detection for device and device type
+*
+* Example usage: MODETECT.device.iphone (will return a boolean)
+*
+* Device list:
+*   MODETECT.device.iphone
+*   MODETECT.device.ipod
+*   MODETECT.device.ipad
+*   MODETECT.device.android
+*   MODETECT.device.blackberry (will return boolean for webkit based Blackberries)
+*   MODETECT.device.blackberryplaybook
+*   MODETECT.device.windowsphone
+*   MODETECT.device.kindlefire
+*   MODETECT.device.othermobile (portrait resolution of 320 or less)
+*   MODETECT.device.phone
+*   MODETECT.device.tablet
+*   MODETECT.device.desktop
+*
+* Methods for device detection inspired by Sencha Touch Ext.is
+* http://docs.sencha.com/touch/1-1/#!/api/Ext.is
+*
+* Author: Vernon Kesner
+* Version: 1.1.0
+* Last update: April 1, 2012
+*/
 
-  //If a platform match is not found, the three following default values will be returned from getCurrentDevice
-  //If a platform match is found, these values will be updated with device information defined in the platforms array.
-  currentDevice: "desktop",
-  currentDeviceGroup: "desktop",
-  currentDeviceType: "desktop",
+MODETECT.device = (function() {
+  'use strict';
 
-  //all detection based off of window.navigator.platform || window.navigator.userAgent || window.screen.width
-  //each platform below has 4 properties
-  // @property - This should be which property we will use to do our test against platform, userAgent, resolution, osVersion.
-  // @pattern || @maxWidth - Pattern used in regex to match OR integer of max width to match resolution
-  // @identifier - Used as the return identifier set in the options.currentDevice property
-  // @deviceGroup - One of 6 values: ios, iosTablet, androidPhone, androidTablet, otherMobile, unsupportedMobile
-  // @deviceType - Type of device
-  //
-  //There is also an optional "subtests" array that allows you to do further qualifying tests on the particular device.
-  //One of these subtests include detecting osVersion from within the userAgent string (useful with Android phone vs. tablet detection)
-  //This particular subtest has additional properties to those properties listed above.
-  //@version - Integer - major version number to do comparison against.
-  //@versionComparison - String - Type of comparison. "match", "greaterThan", "lessThan"
-  //@exitTest - Boolean - True value will cause the matched device to be returned straight away exiting any further subtests
-  platforms: [
-    {
-      property: "platform",
-      pattern: /iPhone/i,
-      identifier: "iphone",
-      deviceGroup: "ios",
-      deviceType: "phone"
-    },
-    {
-      property: "platform",
-      pattern: /iPad/i,
-      identifier: "ipad",
-      deviceGroup: "iosTablet",
-      deviceType: "tablet"
-    },
-    {
-      property: "platform",
-      pattern: /iPod/i,
-      identifier: "iphone",
-      deviceGroup: "ios",
-      deviceType: "phone"
-    },
-    {
-      property: "userAgent",
-      pattern: /Android/i,
-      identifier: "android",
-      deviceGroup: "androidPhone",
-      deviceType: "phone",
-      subtests: [
-        {
-          property: "userAgent",
-          pattern: /Mobile/i,
-          identifier: "android",
-          deviceGroup: "androidPhone",
-          deviceType: "phone"
-        },
-        {
-          property: "osVersion",
-          pattern: /Android\s(\d+\.\d+)/i,
-          version: 3,
-          versionComparison: "match",
-          exitTest: true,
-          identifier: "android",
-          deviceGroup: "androidTablet",
-          deviceType: "tablet"
-        },
-        {
-          property: "resolution",
-          maxPortraitWidth: 320,
-          identifier: "android",
-          deviceGroup: "androidPhone",
-          deviceType: "phone"
-        }
-      ]
-    },
-    {
-      property: "userAgent",
-      pattern: /Android/i,
-      identifier: "android",
-      deviceGroup: "androidPhone",
-      deviceType: "phone",
-      subtests: [
-        {
-          property: "userAgent",
-          pattern: /Opera\sMini/i,
-          identifier: "android",
-          deviceGroup: "androidPhone",
-          deviceType: "phone"
-        }
-      ]
-    },
-    {
-      property: "userAgent",
-      pattern: /Android/i,
-      identifier: "android",
-      deviceGroup: "androidTablet",
-      deviceType: "tablet"
-    },
-    {
-      property: "userAgent",
-      pattern: /BlackBerry/i,
-      identifier: "blackberry",
-      deviceGroup: "unsupportedMobile",
-      deviceType: "phone",
-      subtests: [
-        {
-          property: "userAgent",
-          pattern: /Mobile/i,
-          identifier: "blackberry",
-          deviceGroup: "otherMobile",
-          deviceType: "phone"
-        }
-      ]
-    },
-    {
-      property: "userAgent",
-      pattern: /RIM\sTablet/i,
-      identifer: "rimTablet",
-      deviceGroup: "rimTablet",
-      deviceType: "tablet"
-    },
-    {
-      property: "userAgent",
-      pattern: /Windows\sPhone/i, //may also need to include IEMobile
-      identifier: "windowsphone",
-      deviceGroup: "otherMobile",
-      deviceType: "phone"
-    },
-    {
-      property: "userAgent",
-      pattern: /Silk/i,
-      identifier: "kindlefire",
-      deviceGroup: "androidTablet",
-      deviceType: "tablet"
-    },
-    {
-      property: "userAgent",
-      pattern: /Opera\sMini/i,
-      identifier: "unknown",
-      deviceGroup: "otherMobile",
-      deviceType: "phone"
-    },
-    {
-      property: "resolution",
-      maxPortraitWidth: 320,
-      identifier: "mobile",
-      deviceGroup: "otherMobile",
-      deviceType: "phone"
+  var device = {};
+
+  device.phone = false;
+  device.tablet = false;
+  //iPhone
+  device.iphone = (testNavigator(/iPhone/i, 'platform')) ? true : false;
+  if(device.iphone) { device.phone = true; }
+  //iPad
+  device.ipad = (testNavigator(/iPad/i, 'platform')) ? true : false;
+  if(device.ipad) { device.tablet = true; }
+  //iPod
+  device.ipod = (testNavigator(/iPod/i, 'platform')) ? true : false;
+  if(device.ipod) { device.phone = true; }
+  //Android device
+  device.android = testNavigator(/Android/i, 'userAgent');
+  if(device.android) {
+    //Android v3 built as tablet-only version of the OS
+    //Can definitively say it's a tablet at this point
+    if(testVersion(/Android\s(\d+\.\d+)/i, 3, 'match') ) {
+      device.tablet = true;
     }
-  ],
-
-  init: function() {
-    this.getCurrentDevice();
-  },
-
-  //determine the current device a user is using.
-  // return - Object with three properties: device, deviceGroup, deviceType
-  getCurrentDevice: function() {
-    var self = this,
-        navigator = window.navigator,
-        platforms = self.platforms,
-        totalPlatforms = platforms.length,
-        currentPlatform,
-        deviceMatch,
-        i, j,
-        subtestsLength,
-        currentSubtest;
-
-    //loop through each platform to test for a device match
-    for(i = 0; i < totalPlatforms; i++) {
-      currentPlatform = platforms[i];
-      if(currentPlatform.property === "resolution") {
-        if(self.testDeviceResolution(currentPlatform.maxPortraitWidth)) {
-          self.currentDevice = currentPlatform.identifier;
-          self.currentDeviceGroup = currentPlatform.deviceGroup;
-          self.currentDeviceType = currentPlatform.deviceType;
-          //Match found, return device and skip needless loop iterations
-          return { device: self.currentDevice, deviceGroup: self.currentDeviceGroup, deviceType: self.currentDeviceType };
-
-        }
-      }
-      else {
-        //TODO: Add check in here to test for Android version on the top level of tests as well.
-        //checking the navigator object
-        deviceMatch = currentPlatform.pattern.test(navigator[currentPlatform.property]);
-        //create an entry on the deviceDetection object that holds this specific device with a match and group
-        //This will allow for each "is this an iPad" type conditionals if necessary
-
-        if(deviceMatch) {
-          //add this device in its current identification state as the current device.
-          self.currentDevice = currentPlatform.identifier;
-          self.currentDeviceGroup = currentPlatform.deviceGroup;
-          self.currentDeviceType = currentPlatform.deviceType;
-
-          //are there any subtests we want to run on this device?
-          subtestsLength = (currentPlatform.subtests) ? currentPlatform.subtests.length : 0;
-
-          for(j = 0; j < subtestsLength; j++) {
-
-            currentSubtest = currentPlatform["subtests"][j];
-
-            if(currentSubtest.property === "resolution") {
-              if(self.testDeviceResolution(currentSubtest.maxPortraitWidth)) {
-                self.currentDevice = currentSubtest.identifier;
-                self.currentDeviceGroup = currentSubtest.deviceGroup;
-                self.currentDeviceType = currentSubtest.deviceType;
-              }
-              else {
-                deviceMatch = false;
-              }
-            }
-            else if(currentSubtest.property === "osVersion" && self.testVersion(currentSubtest.pattern, currentSubtest.version, currentSubtest.versionComparison)) {
-              self.currentDevice = currentSubtest.identifier;
-              self.currentDeviceGroup = currentSubtest.deviceGroup;
-              self.currentDeviceType = currentSubtest.deviceType;
-
-              if(currentSubtest.exitTest) {
-                //test is treated as an exitTest, return device now
-                return { device: self.currentDevice, deviceGroup: self.currentDeviceGroup, deviceType: self.currentDeviceType };
-              }
-
-            }
-            else if (currentSubtest.pattern.test(navigator[currentSubtest.property])) {
-              //Testing the navigator object
-              self.currentDevice = currentSubtest.identifier;
-              self.currentDeviceGroup = currentSubtest.deviceGroup;
-              self.currentDeviceType = currentSubtest.deviceType;
-            }
-            else {
-              deviceMatch = false;
-            }
-          }
-
-          //make sure we still have a device match after the battery of subtests.
-          //If so, return device and skip needless loop iterations
-          if(deviceMatch) {
-            return { device: self.currentDevice, deviceGroup: self.currentDeviceGroup, deviceType: self.currentDeviceType };
-          }
-
-        }
-      }
+    //Checking for "mobile" in userAgent string for Mobile Safari.
+    //Also checking resolution here (max portrait of 800), simply because so
+    //many Android tablets that are popular use Android v2.x or now v4.x
+    else if(testResolution(800) && testNavigator(/Mobile/i, 'userAgent')) {
+      device.phone = true;
     }
+    //Default phone vs. tablet value? Defaulting to phone for now until I can think
+    //of a better alternative approach to narrow down better.
+    else {
+      device.phone = true;
+    }
+  }
+  //Blackberry Phone with WebKit
+  device.blackberry = (testNavigator(/Blackberry/i, 'userAgent') && testNavigator(/Mobile/i, 'userAgent')) ? true : false;
+  if(device.blackberry) { device.phone = true; }
+  //Blackberry Playbook
+  device.blackberryplaybook = testNavigator(/RIM\sTablet/i, 'userAgent');
+  if(device.blackberryplaybook) { device.tablet = true; }
+  //Windows Phone
+  device.windowsphone = testNavigator(/Windows\sPhone/i, 'userAgent');
+  if(device.windowsphone) { device.phone = true; }
+  //Kindle Fire
+  device.kindlefire = testNavigator(/Silk/i, 'userAgent');
+  if(device.kindlefire) { device.tablet = true; }
+  //other mobile
+  device.othermobile = (device.phone || device.tablet || device.ipod) ? false : testResolution(320);
+  if(device.othermobile) { device.phone = true; }
+  //desktop user?
+  device.desktop = (device.phone || device.tablet || device.ipod) ? false : true;
 
-    //no match was found, return default data
-    return { device: self.currentDevice, deviceGroup: self.currentDeviceGroup, deviceType: self.currentDeviceType };
-
-  },
-
-  //Test if maximum portrait width set in platform is less than the minimum screen width
+  //Test window.navigator object for a match
   //return - Boolean
-  testDeviceResolution: function(maxPortraitWidth) {
-    //Get the minimum portrait width and deal with high density screens as well
-    var portraitWidth = Math.min(screen.width, screen.height) / ("devicePixelRatio" in window ? window.devicePixelRatio : 1);
+  function testNavigator(pattern, property) {
+    return pattern.test(window.navigator[property]);
+  }
 
+  //Test if maximum portrait width set in platform is less than the current screen width
+  //return - Boolean
+  function testResolution(maxPortraitWidth) {
+    var portraitWidth = Math.min(screen.width, screen.height) / ("devicePixelRatio" in window ? window.devicePixelRatio : 1);
     if(portraitWidth <= maxPortraitWidth) {
       return true;
     }
     else {
       return false;
     }
-  },
+  }
 
   //Test OS Version
   //param - pattern - Regex pattern
   //param - version - Integer - Major version to compare against
   //param - versionComparison - String - How version matching is done "match", "greaterThan", "lessThan"
   //return - Boolean
-  testVersion: function(pattern, version, versionComparison) {
+  function testVersion(pattern, version, versionComparison) {
     var fullVersion = pattern.exec(window.navigator.userAgent),
         majorVersion = parseInt(fullVersion[1], 10);
-
+        
     if(versionComparison === "match" && majorVersion === version ) {
       return true;
     }
@@ -295,7 +122,8 @@ MODETECT.detection = {
     else {
       return false;
     }
-
   }
 
-};
+  return device;
+
+}());
