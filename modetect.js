@@ -26,7 +26,11 @@ var MODETECT = MODETECT || {};
 *
 * Author: Vernon Kesner
 * Version: 1.1.0
+<<<<<<< HEAD
 * Last update: March 21, 2012
+=======
+* Last update: April 1, 2012
+>>>>>>> b00a683cdf17c7f2a5f94f5fef76d2ee0c0baba2
 */
 
 MODETECT.device = (function() {
